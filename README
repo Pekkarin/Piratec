@@ -1,0 +1,26 @@
+The Piratebay CLI Version 0.2 (30 Oct 2011) 
+
+Extremely simple Piratebay torrent download script. 
+Uses lynx and wget among classic gnu core utils as grep, cut, sed etc.
+Script shoud be able to run in any *nix with lynx and wget.
+
+Usage: piratec -h | --help
+       piratec -s | --search "search string".
+       piratec -a | --about
+
+       Example: piratec -s archlinux
+
+Menu:  After search, hits are shown in a numbered list. You may download
+       correspondin torrent by it's number, by hitting 'd'.
+       
+       You may jump pages by pressing 'p' and giving page number. Note that pages 
+       starts from 0.
+
+       Hit 'h' for this help, and obviously 'q' for quits.
+
+Misc:  - Using "piratec -s" without string parameter shows recent additions to site.
+       - You should edit piratec-file to change settings.
+       - In crash or ctrl-c quits temporary files are not deleted until next run.
+
+Piratebay search is kinda simple: "thepiratebay.org/seach/<string>/0" for first page.
+thepiratebay.org/search/1" for next and so on.

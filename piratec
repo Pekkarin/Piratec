@@ -1,0 +1,236 @@
+#!/bin/bash
+#
+# PiratebayCLI tool version 0.2/30.10.2011
+#
+# Extremely simple Piratebay torrent download script. 
+# Uses lynx and wget among classic gnu core utils as grep, cut, sed etc.
+# Script shoud be able to run in any *nix with lynx and wget.
+# Usage: pirate -s <search string>
+#
+# Script by Waldo 2011
+#
+#
+# Piratebay search is kinda simple: "thepiratebay.org/seach/<string>/0" for first page.
+# "thepiratebay.org/search/1" for next and so on.
+#
+
+
+#Colors
+
+col0="\033[0m"      #color off
+colb="\033[1;34m"   #color blue
+coly="\033[1;33m"	#color yellow
+colg="\033[1;32m"	#color green
+colr="\033[1;31m"	#color red
+fntb="\033[1m"		#font bold
+
+
+#Config
+function config_load {
+	
+	#Default search page
+	#page=0
+
+	#Torrent save path
+	torrentdir="$HOME/torrent"
+	
+	#Temporary files
+	piratetmp="$torrentdir/.piratetmp.tmp"
+	piratefound="$torrentdir/.piratefound.tmp"
+	piratelinks="$torrentdir/.piratelinks.tmp"
+
+	#Removes old tmp-files if last session was forced quit or crashed.
+	if [ -f $piratetmp ]; then
+		rm $piratetmp $piratefound $piratelinks 
+	fi
+
+	touch $piratetmp $piratefound $piratelinks
+}
+
+function about {
+echo
+echo "The Piratebay CLI Version 0.2 (30 Oct 2011) 
+
+Simple shell script to search and download torrent files from
+The Piratebay.
+"
+}
+
+
+#Script
+function usage {
+
+echo -e "
+Usage: piratec -h | --help
+       piratec -s | --search \"search string\".
+       piratec -a | --about
+
+       Example: piratec -s archlinux
+
+Menu:  After search, hits are shown in a numbered list. You may download
+       correspondin torrent by it's number, by hitting 'd'.
+       
+       You may jump pages by pressing 'p' and giving page number. Note that pages 
+       starts from 0.
+
+       Hit 'h' for this help, and obviously 'q' for quits.
+
+Misc:  - Using \"piratec -s\" without string parameter shows recent additions to site.
+       - You should edit piratec-file to change settings.
+       - In crash or ctrl-c quits temporary files are not deleted until next run.
+"
+}
+
+#exit functions
+function error_exit {
+    usage
+    exit 1
+}
+
+function normal_exit {
+	rm $piratetmp $piratefound $piratelinks 
+	exit 0
+}
+
+
+function download {
+
+	echo -en "${coly}Download torrent ==> ${col0}"
+	read tname
+	
+	echo $tname | grep "[^0-9]" > /dev/null 2>&1 #grep returns either 0 or 1
+		
+	if [ "$?" -eq "0" ]; then
+  			echo "Sorry, only numbers allowed."
+  	   		normal_exit
+
+		elif [ "$tname" == "" ]; then
+			echo "Nothing done."
+			normal_exit
+
+		#if number under 31 start downloading corresponding file
+		elif [ "$tname" -lt "31" ]; then
+ 			echo Torrent saved to $torrentdir
+			torrdown=`cat $piratelinks |sed -n "${tname}p"`
+			wget -q $torrdown -P $torrentdir
+
+			normal_exit #Normal exit-function
+	  	
+		else
+			echo "Nothing done."
+			normal_exit
+				
+	fi
+
+exit 1
+}
+
+
+#Function to load all needed data from piratebay
+function load_torrent_data {
+
+	#downloads first page of searched item and push to file
+	lynx -source http://thepiratebay.org/search/$sstring/$page >> $piratetmp
+	
+	#extracts number of total hits 2
+	found=`cat $piratetmp |grep 'approx' | cut -d 'x' -f2 |cut -d ' ' -f2`
+    
+	#hits from
+	#totalpages=`cat $piratetmp |grep 'hits from' |cut -d ' ' -f8`
+
+	#extracts nice version of torrent names & push to file
+	cat $piratetmp |grep "detName" |cut -d ' ' -f7-18 |cut -d '>' -f1 |cut -d '"' -f1 >> $piratefound
+	
+	#linenumbers for found torrents
+	foundlist=`nl $piratefound`
+
+	#extracts links to torrents & push to file
+	foundlinks=`cat $piratetmp |grep 'http://torrents.thepiratebay.org/' |cut -d '=' -f2 |cut -d '"' -f2 >> $piratelinks`
+
+}
+
+#Main query until answer
+function query {
+
+read -s -n 1 sel
+	case $sel in
+		["D","d"]*)
+			download
+			;;
+		["P","p"]*)
+			jump_page
+			searchtor
+			;;
+		["H","h"]*)
+			echo
+			usage
+			exit
+			;;
+		["Q","q"]*)
+			echo
+			echo "Exit.."
+			exit
+			;;
+	*) 
+	query
+	#;;
+	esac
+}
+
+#Function to change page. 0 is first.
+function jump_page {
+	echo -en "${coly}Jump to page ==> ${col0}"
+	read page 
+
+#echo $page | grep "[^0-9]" > /dev/null 2>&1 #grep returns either 0 or 1
+		
+#	if [ "$?" -eq "0" ]; then
+#			page=0
+
+#		elif [ "$tname" == "" ]; then
+#			page=0
+
+#		else
+#			searchtor
+#fi
+
+}	
+
+#Main function
+function searchtor {
+
+	config_load
+	load_torrent_data
+
+	echo 
+    echo -en "${colg}Showing "
+	echo `cat $piratetmp |grep 'hits from' |cut -d ' ' -f4-11 |cut -d '<' -f1`
+	echo -e "${col0}$foundlist"
+	echo
+	echo -e "${coly}Enter 'd' to download or 'p' for jump to page or 'q' to quit"
+	echo -e "${coly}Enter 'h' for help. Note that page 0 is first page."
+	echo -e "${colb}------------------------------------------------------------${col0}"
+	echo -en "Page ${colg}${page} ${coly}==> ${col0}"
+
+	query
+}
+
+
+# Commandline arguments
+while [ "$1" != "" ]; do
+    case $1 in
+        -s |--search )     shift
+							page=0
+							sstring=$@ #stores parameters (search strings)
+							searchtor	
+                            ;;
+		-h |--help )		usage #shows arguments
+                            exit
+                            ;;
+		-a |--about )		about
+							exit
+							;;
+		* )                 error_exit
+	esac
+	shift
+done
