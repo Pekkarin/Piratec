@@ -160,10 +160,6 @@ function load_torrent_data {
 	#downloads first page of searched item and push to file
 	wget --quiet --continue http://thepiratebay.org/search/$sstring/$page -O $piratetmp
 	
-	#list of found torrents
-	#grep "<div class=\"detName\"" $piratetmp |cut -d '>' -f3 \
-	#	|cut -d '<' -f1 |cut -c1-35 > $piratefound
-
 	grep "<div class=\"detName\"" $piratetmp | \
 	awk '{gsub(/<[^>]*>|^[ \t]*/,""); gsub(/&amp;/,""); print}' |sed 's/$/                      /' \
 	|cut -c1-45 > $piratefound
@@ -171,9 +167,6 @@ function load_torrent_data {
 	grep 'http://torrents.thepiratebay.org/' $piratetmp |cut -d '=' -f2 \
 		|cut -d '"' -f2 > $piratelinks
 
-    #grep "<font class=\"detDesc\">" $piratetmp | \
-    #    awk '{gsub(/<[^>]*>|^[ \t]*/,""); gsub(/&nbsp;/," "); print}' > $pirateinfo 
- 	
 	grep "<font class=\"detDesc\">" $piratetmp | \
  		awk '{gsub(/&nbsp;/,""); print}' |cut -d ' ' -f4-5 |cut -d ',' -f1 | \
 		cut -c1-100 > $pirateinfo	
