@@ -1,19 +1,37 @@
 #!/bin/bash
 #
-# PiratebayCLI tool version 0.2/30.10.2011
+# Piratebay Commandline tool
 #
 # Extremely simple Piratebay torrent download script. 
-# Uses lynx and wget among classic gnu core utils as grep, cut, sed etc.
-# Script shoud be able to run in any *nix with lynx and wget.
+# Using wget among classic gnu core utils as grep, cut, sed etc.
+# Script shoud be able to run in any *nix with wget.
 # Usage: pirate -s <search string>
 #
-# Script by Waldo 2011
+#-----------------------------------------------------
 #
+# Version history
 #
-# Piratebay search is kinda simple: "thepiratebay.org/seach/<string>/0" for first page.
-# "thepiratebay.org/search/1" for next and so on.
+# Version 0.0t3 Third testing (31 Dec 2011)
+#  - Interactive option menu (testing)
+#  - Removed lynx depedency
+#  - Now showing torrent size and seeds
+#  - Some script cleanup, still darn ugly
 #
+# Version 0.0t2 Second testing (29 Dec 2011)
+#  - Added colors and errorhandlers
+#  - Added some help information
+# 
+# Version 0.0t1 First testing (28 Dec 2011)
+#  - Added some new small details
+#
+# Version 0.0 Original ugly script written (27 Dec 2011)
+#  - Working script without errorhandlers
+#
+#-----------------------------------------------------
 
+
+
+# BEGIN
 
 #Colors
 
@@ -28,34 +46,41 @@ fntb="\033[1m"		#font bold
 #Config
 function config_load {
 	
-	#Default search page
-	#page=0
-
+	#piratesite="http://thepiratebay.org/"
+	
 	#Torrent save path
+    #Change this to suite your needs
 	torrentdir="$HOME/torrent"
 	
 	#Temporary files
 	piratetmp="$torrentdir/.piratetmp.tmp"
 	piratefound="$torrentdir/.piratefound.tmp"
 	piratelinks="$torrentdir/.piratelinks.tmp"
+    pirateinfo="$torrentdir/.pirateinfo.tmp"
+	pirateseeds="$torrentdir/.pirateseeds.tmp"
+	piratetotal="$torrentdir/.piratetotal.tmp"
 
 	#Removes old tmp-files if last session was forced quit or crashed.
 	if [ -f $piratetmp ]; then
-		rm $piratetmp $piratefound $piratelinks 
+		rm $piratetmp $piratefound $piratelinks $pirateinfo $pirateseeds $piratetotal
 	fi
 
-	touch $piratetmp $piratefound $piratelinks
+	#Makes new temporary files
+	touch $pirateinfo $pirateseeds $piratetotal $piratetmp $piratefound $piratelinks
 }
 
 function about {
-echo
-echo "The Piratebay CLI Version 0.2 (30 Oct 2011) 
-
-Simple shell script to search and download torrent files from
+	version
+	echo "Simple shell script to search and download torrent files from
 The Piratebay.
 "
 }
 
+function version {
+
+echo -e \\n"The Piratebay CLI Testing version (31 Oct 2011)
+Created and tested in GNU bash version 4.2.10(2)-release"\\n
+}
 
 #Script
 function usage {
@@ -64,6 +89,8 @@ echo -e "
 Usage: piratec -h | --help
        piratec -s | --search \"search string\".
        piratec -a | --about
+       piratec -v | --version
+       piratec -f | --full
 
        Example: piratec -s archlinux
 
@@ -76,6 +103,7 @@ Menu:  After search, hits are shown in a numbered list. You may download
        Hit 'h' for this help, and obviously 'q' for quits.
 
 Misc:  - Using \"piratec -s\" without string parameter shows recent additions to site.
+         Consider it as bug;). Page scrolling shows nothing vice.
        - You should edit piratec-file to change settings.
        - In crash or ctrl-c quits temporary files are not deleted until next run.
 "
@@ -88,7 +116,7 @@ function error_exit {
 }
 
 function normal_exit {
-	rm $piratetmp $piratefound $piratelinks 
+	rm $pirateseeds $piratetotal $piratetmp $piratefound $piratelinks $pirateinfo
 	exit 0
 }
 
@@ -101,25 +129,25 @@ function download {
 	echo $tname | grep "[^0-9]" > /dev/null 2>&1 #grep returns either 0 or 1
 		
 	if [ "$?" -eq "0" ]; then
-  			echo "Sorry, only numbers allowed."
+  			echo -e \\n"Sorry, only numbers allowed."\\n
   	   		normal_exit
-
+		
 		elif [ "$tname" == "" ]; then
-			echo "Nothing done."
-			normal_exit
-
+			#echo -e \\n"Nothing done."\\n
+			#normal_exit
+		    echo -en "Page ${colg}$page ${coly}==> " 
+			download	
+		
 		#if number under 31 start downloading corresponding file
 		elif [ "$tname" -lt "31" ]; then
- 			echo Torrent saved to $torrentdir
+			echo -e \\n"Torrent saved to $torrentdir"\\n
 			torrdown=`cat $piratelinks |sed -n "${tname}p"`
 			wget -q $torrdown -P $torrentdir
-
 			normal_exit #Normal exit-function
-	  	
+		
 		else
-			echo "Nothing done."
+			echo -e \\n"Nothing done."\\n
 			normal_exit
-				
 	fi
 
 exit 1
@@ -130,24 +158,76 @@ exit 1
 function load_torrent_data {
 
 	#downloads first page of searched item and push to file
-	lynx -source http://thepiratebay.org/search/$sstring/$page >> $piratetmp
+	wget --quiet --continue http://thepiratebay.org/search/$sstring/$page -O $piratetmp
 	
-	#extracts number of total hits 2
-	found=`cat $piratetmp |grep 'approx' | cut -d 'x' -f2 |cut -d ' ' -f2`
-    
-	#hits from
-	#totalpages=`cat $piratetmp |grep 'hits from' |cut -d ' ' -f8`
+	#list of found torrents
+	#grep "<div class=\"detName\"" $piratetmp |cut -d '>' -f3 \
+	#	|cut -d '<' -f1 |cut -c1-35 > $piratefound
 
-	#extracts nice version of torrent names & push to file
-	cat $piratetmp |grep "detName" |cut -d ' ' -f7-18 |cut -d '>' -f1 |cut -d '"' -f1 >> $piratefound
-	
+	grep "<div class=\"detName\"" $piratetmp | \
+	awk '{gsub(/<[^>]*>|^[ \t]*/,""); gsub(/&amp;/,""); print}' |sed 's/$/                      /' \
+	|cut -c1-45 > $piratefound
+
+	grep 'http://torrents.thepiratebay.org/' $piratetmp |cut -d '=' -f2 \
+		|cut -d '"' -f2 > $piratelinks
+
+    #grep "<font class=\"detDesc\">" $piratetmp | \
+    #    awk '{gsub(/<[^>]*>|^[ \t]*/,""); gsub(/&nbsp;/," "); print}' > $pirateinfo 
+ 	
+	grep "<font class=\"detDesc\">" $piratetmp | \
+ 		awk '{gsub(/&nbsp;/,""); print}' |cut -d ' ' -f4-5 |cut -d ',' -f1 | \
+		cut -c1-100 > $pirateinfo	
+
+	#extract seeds
+	grep "<td align=\"right\">" $piratetmp | \
+	awk '{gsub(/<[^>]*>|^[ \t]*/,""); print}' |sed -n 'p;N' \
+	|cut -c1-100 > $pirateseeds
+
 	#linenumbers for found torrents
-	foundlist=`nl $piratefound`
-
-	#extracts links to torrents & push to file
-	foundlinks=`cat $piratetmp |grep 'http://torrents.thepiratebay.org/' |cut -d '=' -f2 |cut -d '"' -f2 >> $piratelinks`
+	echo -e \\n"Number  Name 					        Size            Seeds"
+	echo -e "${colb}-----------------------------------------------------------------------------${col0}"
+	paste $piratefound $pirateinfo $pirateseeds > $piratetotal
+	nl $piratetotal
 
 }
+
+function load_torrent_information {
+	
+	echo -en "${coly}Details from torrent ==> ${col0}"
+	read dname
+	
+	echo $dname | grep "[^0-9]" > /dev/null 2>&1 #grep returns either 0 or 1
+		
+	if [ "$?" -eq "0" ]; then
+  			echo -e \\n"Sorry, only numbers allowed."\\n
+  	   		normal_exit
+		
+		elif [ "$dname" == "" ]; then
+			#echo -e \\n"Nothing done."\\n
+			#normal_exit
+		    echo -en "Page ${colg}$page ${coly}==> " 
+		
+			load_torrent_information
+		#if number under 31 start downloading corresponding file
+		elif [ "$dname" -lt "31" ]; then
+			
+			echo -en \\n"${colg}Details from ${col0}"
+			cat $piratefound |sed -n "${dname}p"
+			cat $pirateinfo |sed -n "${dname}p"
+			echo
+			read -p "Press any key to continue.."
+			download
+
+		else
+			echo -e \\n"Nothing done."\\n
+			normal_exit
+	fi
+
+exit 1
+
+
+}
+
 
 #Main query until answer
 function query {
@@ -166,10 +246,14 @@ read -s -n 1 sel
 			usage
 			exit
 			;;
+		["I","i"]*)
+			load_torrent_information
+			read -p "Press any key to return.."
+			download
+			;;
 		["Q","q"]*)
-			echo
-			echo "Exit.."
-			exit
+			echo -e \\n\\n"Exit.."\\n
+			normal_exit
 			;;
 	*) 
 	query
@@ -181,19 +265,6 @@ read -s -n 1 sel
 function jump_page {
 	echo -en "${coly}Jump to page ==> ${col0}"
 	read page 
-
-#echo $page | grep "[^0-9]" > /dev/null 2>&1 #grep returns either 0 or 1
-		
-#	if [ "$?" -eq "0" ]; then
-#			page=0
-
-#		elif [ "$tname" == "" ]; then
-#			page=0
-
-#		else
-#			searchtor
-#fi
-
 }	
 
 #Main function
@@ -205,11 +276,12 @@ function searchtor {
 	echo 
     echo -en "${colg}Showing "
 	echo `cat $piratetmp |grep 'hits from' |cut -d ' ' -f4-11 |cut -d '<' -f1`
-	echo -e "${col0}$foundlist"
+	#echo -e "${col0}$foundlist"
 	echo
 	echo -e "${coly}Enter 'd' to download or 'p' for jump to page or 'q' to quit"
-	echo -e "${coly}Enter 'h' for help. Note that page 0 is first page."
-	echo -e "${colb}------------------------------------------------------------${col0}"
+	echo -e "${coly}Enter 'h' for help, 'i' for extra details. Note that page 0 is first page."
+		echo -e "${colb}-----------------------------------------------------------------------------${col0}"
+	
 	echo -en "Page ${colg}${page} ${coly}==> ${col0}"
 
 	query
@@ -229,6 +301,11 @@ while [ "$1" != "" ]; do
                             ;;
 		-a |--about )		about
 							exit
+							;;
+        -v |--version )     version
+							;;
+		-f |--full )		about
+							usage
 							;;
 		* )                 error_exit
 	esac
