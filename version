@@ -1,0 +1,32 @@
+
+Version history
+-----------------------------------------------------
+
+Version 0.0F Final testing version (2 Nov 2011)
+	- Cleaned up code
+  	- Now uses config-file and separate function libriary
+    - Still has plenty monkey code.  
+
+Version 0.0t4 Fourth testing (1 Nov 2011)
+	- Better menu
+	- Added information seeker and details
+	- Script is becoming _very_ ugly spagette!!
+  	  Need to clean up.
+	- Noticed that I had wrong month in version data..:|
+  	  (Yeah, english ain't my native language.)
+
+Version 0.0t3 Third testing (31 Oct 2011)
+  	- Interactive option menu (testing)
+  	- Removed lynx depedency
+  	- Now showing torrent size and seeds
+  	- Some script cleanup, still darn ugly
+
+Version 0.0t2 Second testing (29 Oct 2011)
+  	- Added colors and errorhandlers
+  	- Added some help information
+ 
+Version 0.0t1 First testing (28 Oct 2011)
+  	- Added some new small details
+
+Version 0.0 Original ugly script written (27 Oct 2011)
+  	- Working script without errorhandlers

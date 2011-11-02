@@ -1,0 +1,7 @@
+#Piratec Piratebay commandline client config
+
+tpbsite="http://thepiratebay.org"
+colors=ON #ON or OFF
+torrentdir="$HOME/torrent"
+	
+

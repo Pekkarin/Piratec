@@ -1,32 +1,78 @@
-Script is testing version but behaves as wanted and works perfectly.
-Code isn't yet so beauty, but does it's work.
 
-#
-# Piratebay Commandline tool
-#
-# Extremely simple Piratebay torrent download script. 
-# Using wget among classic gnu core utils as grep, cut, sed etc.
-# Script shoud be able to run in any *nix with wget.
-# Usage: pirate -s <search string>
-#
-#-----------------------------------------------------
-#
-# Version history
-#
-# Version 0.0t3 Third testing (31 Dec 2011)
-#  - Interactive option menu (testing)
-#  - Removed lynx depedency
-#  - Now showing torrent size and seeds
-#  - Some script cleanup, still darn ugly
-#
-# Version 0.0t2 Second testing (29 Dec 2011)
-#  - Added colors and errorhandlers
-#  - Added some help information
-# 
-# Version 0.0t1 First testing (28 Dec 2011)
-#  - Added some new small details
-#
-# Version 0.0 Original ugly script written (27 Dec 2011)
-#  - Working script without errorhandlers
-#
-#-----------------------------------------------------
+Piratec version 0.0F Final testing version 02 Nov 2011
+
+Final testing. Basic frame is now working, going to alpha-state.
+Until release (1) I'am trying to implement all important Piratebay
+features (such as categories) and keep bugs and too-ugly-monkey-code
+out.
+
+--
+
+Description:
+
+The Piratebay Commandline search and download util.
+Not torrent client, used only for fast search and torrent-download.
+Consider using with rtorrent and auto-trigger torrent-folder.
+
+--
+
+Usage: piratec -h | --help
+       piratec -s | --search "search string".
+       piratec -a | --about
+       piratec -v | --version
+       #not implemented in this version: {piratec -c | --category TESTING!
+	  
+	   #Example: piratec -s archlinux
+       #Categories: 100 music, 200 movies, 300 apps, 400 games
+	   #Example: piratec -c 300,400 -s linux
+       #Menu:  
+	   
+	   After search, hits are shown in a numbered list. You may download
+       correspondin torrent by it's number, by hitting 'd'.
+       
+       Hit 'h' for this help, and obviously 'q' for quits.
+
+Misc:  - Using "piratec -s" without string parameter shows recent additions to site.
+         Consider it as bug;).
+       - You should edit config-file to change settings.
+       - In crash or ctrl-c quits temporary files are not deleted until next run.
+--
+
+Version history
+-----------------------------------------------------
+
+Version 0.0F Final testing version (2 Nov 2011)
+	- Cleaned up code
+  	- Now uses config-file and separate function libriary
+    - Still has plenty monkey code.  
+
+Version 0.0t4 Fourth testing (1 Nov 2011)
+	- Better menu
+	- Added information seeker and details
+	- Script is becoming _very_ ugly spagette!!
+  	  Need to clean up.
+	- Noticed that I had wrong month in version data..:|
+  	  (Yeah, english ain't my native language.)
+
+Version 0.0t3 Third testing (31 Oct 2011)
+  	- Interactive option menu (testing)
+  	- Removed lynx depedency
+  	- Now showing torrent size and seeds
+  	- Some script cleanup, still darn ugly
+
+Version 0.0t2 Second testing (29 Oct 2011)
+  	- Added colors and errorhandlers
+  	- Added some help information
+ 
+Version 0.0t1 First testing (28 Oct 2011)
+  	- Added some new small details
+
+Version 0.0 Original ugly script written (27 Oct 2011)
+  	- Working script without errorhandlers
+
+--
+
+FILES:
+piratec  - main shell script
+utils.sh - functions (holds all main scipting)
+config   - Config file, yet kinda lame
